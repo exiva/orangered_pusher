@@ -18,7 +18,8 @@ def loginReddit(u,p):
 	http = httplib2.Http()
 	url = 'https://www.reddit.com/api/login'
 	body = {'user': u, 'passwd': p}
-	headers = {'Content-type': 'application/x-www-form-urlencoded'}
+	headers = {'Content-type': 'application/x-www-form-urlencoded',
+	'User-Agent': ua}
 	try:
 		response, content = http.request(url, 'POST', headers=headers, body=urllib.urlencode(body))
 		return response
@@ -28,7 +29,8 @@ def loginReddit(u,p):
 
 def getMe(cookie):
 	http = httplib2.Http()
-	headers = {'Cookie': cookie['set-cookie']}
+	headers = {'Cookie': cookie['set-cookie'],
+	'User-Agent': ua}
 	url = 'https://www.reddit.com/api/me.json'
 	try:
 		content = http.request(url, 'GET', headers=headers)
@@ -47,7 +49,8 @@ def parseMe(d,c):
 
 def getMessages(cookie):
 	http = httplib2.Http()
-	headers = {'Cookie': cookie['set-cookie']}
+	headers = {'Cookie': cookie['set-cookie'],
+	'User-Agent': ua}
 	url = 'https://www.reddit.com/message/unread.json'
 	try:
 		resp, content = http.request(url, 'GET', headers=headers)
@@ -78,7 +81,8 @@ def sendPushalot(b):
 	print "Push it... Push it real good."
 	http = httplib2.Http()
 	url = 'https://pushalot.com/api/sendmessage'
-	headers = {'Content-type': 'application/x-www-form-urlencoded'}
+	headers = {'Content-type': 'application/x-www-form-urlencoded',
+	'User-Agent': ua}
 	body = {
 		'AuthorizationToken': authtoken,
 		'Title': ptitle+' ('+user+')',
@@ -92,6 +96,8 @@ def sendPushalot(b):
 		pass
 
 if __name__ == '__main__':
+	ua = 'orangered_pusher 0.0.2 by /u/exiva'
+
 	settings  = loadCfg('settings.cfg')
 	user 	  = settings.get('reddit','username')
 	passwd	  = settings.get('reddit', 'password')
