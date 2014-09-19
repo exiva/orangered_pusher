@@ -84,15 +84,23 @@ def sendPushalot():
 	except Exception, e:
 		pass
 
+def sendPushbullet():
+	print "Sending pushbullet"
+
+
 if __name__ == '__main__':
 	settings  = loadCfg('settings.cfg')
 	user 	  = settings.get('reddit','username')
 	passwd	  = settings.get('reddit', 'password')
+	paenabled = settings.get('pushalot', 'enabled')
 	authtoken = settings.get('pushalot','token')
 	ptitle    = settings.get('pushalot', 'title')
 	pbody     = settings.get('pushalot', 'body')
 	pttl	  = settings.get('pushalot', 'ttl')
 	pimg	  = settings.get('pushalot', 'image')
+	pbenabled = settings.get('pushbullet', 'enabled')
+	pbtoken   = settings.get('pushbullet', 'token')
+	pbiden    = settings.get('pushbullet', 'iden')
 
 	cookie = loginReddit(user, passwd)
 	lastmsg = 'none';
