@@ -48,7 +48,7 @@ def parseMe(d,c):
 def getMessages(cookie):
 	http = httplib2.Http()
 	headers = {'Cookie': cookie['set-cookie']}
-	url = 'https://www.reddit.com/message/unread.json?limit=1'
+	url = 'https://www.reddit.com/message/unread.json'
 	try:
 		resp, content = http.request(url, 'GET', headers=headers)
 		parseMessage(content)
@@ -57,17 +57,24 @@ def getMessages(cookie):
 		pass
 
 def parseMessage(d):
-	data_json = json.loads(d)
-	data = data_json['data']['children'][0]['data']
+	msg_json = json.loads(d)
+	lastmsg_json = msg_json['data']['children'][0]['data']
 	global lastmsg
 
-	# print data['name'] #debug
-	if lastmsg != data['name']:
-		print "New Message!"
-		sendPushalot()
-		lastmsg = data['name']
+	unreads = len(msg_json)
 
-def sendPushalot():
+	if lastmsg != lastmsg_json['name']:
+		lastmsg = lastmsg_json['name']
+		print "New Message!"
+		if unreads > 1:
+			sendPushalot(str(unreads)+" "+pbody+"s")
+			pass
+		else:
+			sendPushalot(pbody)
+
+	# print data['name'] #debug
+
+def sendPushalot(b):
 	print "Push it... Push it real good."
 	http = httplib2.Http()
 	url = 'https://pushalot.com/api/sendmessage'
@@ -75,7 +82,7 @@ def sendPushalot():
 	body = {
 		'AuthorizationToken': authtoken,
 		'Title': ptitle+' ('+user+')',
-		'Body': pbody,
+		'Body': b,
 		'Image': pimg,
 		'TimeTolive': pttl
 	}
