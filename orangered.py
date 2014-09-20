@@ -94,11 +94,12 @@ def sendPushalot(b):
 		pass
 
 if __name__ == '__main__':
-	ua = 'orangered_pusher 0.0.2 by /u/exiva'
+	ua = 'orangered_pusher/0.0.3 by /u/exiva'
 
 	settings  = loadCfg('settings.cfg')
 	user 	  = settings.get('reddit','username')
 	passwd	  = settings.get('reddit', 'password')
+	poll	  = settings.getint('reddit','poll')
 	authtoken = settings.get('pushalot','token')
 	ptitle    = settings.get('pushalot', 'title')
 	pbody     = settings.get('pushalot', 'body')
@@ -113,11 +114,11 @@ if __name__ == '__main__':
 	while True:
 		if cookie == 0 or cookie['status'] != '200':
 			print "Problem logging in. Trying again."
-			time.sleep(200)
+			time.sleep(poll)
 			cookie = loginReddit(user, passwd)
 			pass
 		elif cookie['status'] == '200':
 			print "Reading mail..."
 			getMe(cookie)
-			time.sleep(300)
+			time.sleep(poll)
 		pass
