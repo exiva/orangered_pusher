@@ -64,7 +64,7 @@ def parseMessage(d):
 	lastmsg_json = msg_json['data']['children'][0]['data']
 	global lastmsg
 
-	unreads = len(msg_json)
+	unreads = len(msg_json['data']['children'])
 
 	if lastmsg != lastmsg_json['name']:
 		lastmsg = lastmsg_json['name']
@@ -74,8 +74,6 @@ def parseMessage(d):
 			pass
 		else:
 			sendPushalot(pbody)
-
-	# print data['name'] #debug
 
 def sendPushalot(b):
 	print "Push it... Push it real good."
