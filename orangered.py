@@ -70,7 +70,7 @@ def parseMessage(d):
 		lastmsg = lastmsg_json['name']
 		print "New Message!"
 		if unreads > 1:
-			sendPushalot(str(unreads)+" "+pbody+"s")
+			sendPushalot(str(unreads)+" "+pbodym)
 			pass
 		else:
 			sendPushalot(pbody)
@@ -102,6 +102,7 @@ if __name__ == '__main__':
 	authtoken = settings.get('pushalot','token')
 	ptitle    = settings.get('pushalot', 'title')
 	pbody     = settings.get('pushalot', 'body')
+	pbodym	  = settings.get('pushalot', 'multibody')
 	pttl	  = settings.get('pushalot', 'ttl')
 	pimg	  = settings.get('pushalot', 'image')
 
