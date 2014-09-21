@@ -108,7 +108,9 @@ def sendPushalot(b):
 		'Title': title,
 		'Body': b,
 		'Image': paimg,
-		'TimeTolive': pattl
+		'TimeTolive': pattl,
+		'Link': pushurl,
+		'LinkTitle': pushurltitle
 	}
 	try:
 		resp, cont = http.request(url, 'POST', headers=headers, body=urllib.urlencode(body))
