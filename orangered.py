@@ -70,10 +70,10 @@ def parseMessage(d):
 		lastmsg = lastmsg_json['name']
 		print "New Message!"
 		if unreads > 1:
-			pushdispatcher("{0:d} {1:s}".format(unreads,pbodym))
+			pushdispatcher("{0:d} {1:s}".format(unreads,msgbodym))
 			pass
 		else:
-			pushdispatcher(pbody)
+			pushdispatcher(msgbody)
 
 def pushdispatcher(msg):
 	if paenabled:
@@ -86,40 +86,74 @@ def pushdispatcher(msg):
 		else:
 			print "Pushalot message sent"
 			pass
+	if poenabled:
+		postatus, content = sendPushover(msg)
+		if postatus != 200:
+			error_json = json.loads(content)
+			desc = error_json['errors']
+			print "ERROR: Pushalot Server returned error: {0:d}: {1:s}".format(
+			postatus, desc)
+		else:
+			print "Pushalot message sent"
+			pass
 
 def sendPushalot(b):
 	http = httplib2.Http()
 	url = 'https://pushalot.com/api/sendmessage'
 	headers = {'Content-type': 'application/x-www-form-urlencoded',
 	'User-Agent': ua}
-	title = "{0:s} ({1:s})".format(ptitle, user)
+	title = "{0:s} ({1:s})".format(msgtitle, user)
 	body = {
 		'AuthorizationToken': paauthtoken,
-		'Title': title
+		'Title': title,
 		'Body': b,
-		'Image': pimg,
-		'TimeTolive': pttl
+		'Image': paimg,
+		'TimeTolive': pattl
 	}
 	try:
 		resp, cont = http.request(url, 'POST', headers=headers, body=urllib.urlencode(body))
 		return int(resp['status']), cont
-
 	except Exception, e:
 		pass
-if __name__ == '__main__':
-	ua = 'orangered_pusher/0.0.3 by /u/exiva'
 
-	settings    = loadCfg('settings.cfg')
-	user 	    = settings.get('reddit','username')
-	passwd	    = settings.get('reddit', 'password')
-	poll	    = settings.getint('reddit','poll')
-	paenabled   = settings.getboolean('pushalot', 'enabled')
+def sendPushover(b):
+	http = httplib2.Http()
+	url = 'https://api.pushover.net/1/messages.json'
+	headers = {'Content-type': 'application/x-www-form-urlencoded',
+	'User-Agent': ua}
+	title = "{0:s} ({1:s})".format(msgtitle, user)
+	body = {
+		'token': 'aU9TRhEJD1fubJiQAKFmQfvkcQd3q9',
+		'user': pousrkey,
+		'title': title,
+		'message': b,
+		'url': pushurl,
+		'url_title': pushurltitle
+	}
+	try:
+		resp, cont = http.request(url, 'POST', headers=headers, body=urllib.urlencode(body))
+		return int(resp['status']), cont
+	except Exception, e:
+		pass
+
+if __name__ == '__main__':
+	ua = 'orangered_pusher/0.0.4 by /u/exiva'
+
+	settings     = loadCfg('settings.cfg')
+	user         = settings.get('reddit','username')
+	passwd       = settings.get('reddit', 'password')
+	poll         = settings.getint('reddit','poll')
+	msgtitle     = settings.get('global', 'title')
+	msgbody      = settings.get('global', 'body')
+	msgbodym     = settings.get('global', 'multibody')
+	pushurl      = settings.get('global', 'url')
+	pushurltitle = settings.get('global', 'urltitle')
+	paenabled    = settings.getboolean('pushalot', 'enabled')
 	paauthtoken  = settings.get('pushalot','token')
-	ptitle      = settings.get('pushalot', 'title')
-	pbody       = settings.get('pushalot', 'body')
-	pbodym	    = settings.get('pushalot', 'multibody')
-	pttl	    = settings.get('pushalot', 'ttl')
-	pimg	    = settings.get('pushalot', 'image')
+	pattl        = settings.get('pushalot', 'ttl')
+	paimg        = settings.get('pushalot', 'image')
+	poenabled    = settings.get('pushover', 'enabled')
+	pousrkey     = settings.get('pushover', 'key')
 
 	cookie = loginReddit(user, passwd)
 	lastmsg = 'none';
