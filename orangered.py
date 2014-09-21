@@ -152,7 +152,7 @@ if __name__ == '__main__':
 	paauthtoken  = settings.get('pushalot','token')
 	pattl        = settings.get('pushalot', 'ttl')
 	paimg        = settings.get('pushalot', 'image')
-	poenabled    = settings.get('pushover', 'enabled')
+	poenabled    = settings.getboolean('pushover', 'enabled')
 	pousrkey     = settings.get('pushover', 'key')
 
 	cookie = loginReddit(user, passwd)
