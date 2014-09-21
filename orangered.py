@@ -70,10 +70,16 @@ def parseMessage(d):
 		lastmsg = lastmsg_json['name']
 		print "New Message!"
 		if unreads > 1:
-			sendPushalot(str(unreads)+" "+pbodym)
+			pushdispatcher(str(unreads)+" "+pbodym)
 			pass
 		else:
-			sendPushalot(pbody)
+			pushdispatcher(pbody)
+
+def pushdispatcher(msg):
+	if paenabled:
+		sendPushalot(msg)
+		pass
+
 
 def sendPushalot(b):
 	print "Push it... Push it real good."
@@ -82,7 +88,7 @@ def sendPushalot(b):
 	headers = {'Content-type': 'application/x-www-form-urlencoded',
 	'User-Agent': ua}
 	body = {
-		'AuthorizationToken': authtoken,
+		'AuthorizationToken': paauthtoken,
 		'Title': ptitle+' ('+user+')',
 		'Body': b,
 		'Image': pimg,
@@ -96,16 +102,17 @@ def sendPushalot(b):
 if __name__ == '__main__':
 	ua = 'orangered_pusher/0.0.3 by /u/exiva'
 
-	settings  = loadCfg('settings.cfg')
-	user 	  = settings.get('reddit','username')
-	passwd	  = settings.get('reddit', 'password')
-	poll	  = settings.getint('reddit','poll')
-	authtoken = settings.get('pushalot','token')
-	ptitle    = settings.get('pushalot', 'title')
-	pbody     = settings.get('pushalot', 'body')
-	pbodym	  = settings.get('pushalot', 'multibody')
-	pttl	  = settings.get('pushalot', 'ttl')
-	pimg	  = settings.get('pushalot', 'image')
+	settings    = loadCfg('settings.cfg')
+	user 	    = settings.get('reddit','username')
+	passwd	    = settings.get('reddit', 'password')
+	poll	    = settings.getint('reddit','poll')
+	paenabled   = settings.getboolean('pushalot', 'enabled')
+	paauthtoken  = settings.get('pushalot','token')
+	ptitle      = settings.get('pushalot', 'title')
+	pbody       = settings.get('pushalot', 'body')
+	pbodym	    = settings.get('pushalot', 'multibody')
+	pttl	    = settings.get('pushalot', 'ttl')
+	pimg	    = settings.get('pushalot', 'image')
 
 	cookie = loginReddit(user, passwd)
 	lastmsg = 'none';
