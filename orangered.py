@@ -70,35 +70,42 @@ def parseMessage(d):
 		lastmsg = lastmsg_json['name']
 		print "New Message!"
 		if unreads > 1:
-			pushdispatcher(str(unreads)+" "+pbodym)
+			pushdispatcher("{0:d} {1:s}".format(unreads,pbodym))
 			pass
 		else:
 			pushdispatcher(pbody)
 
 def pushdispatcher(msg):
 	if paenabled:
-		sendPushalot(msg)
-		pass
-
+		pastatus, content = sendPushalot(msg)
+		if pastatus != 200:
+			error_json = json.loads(content)
+			desc = error_json['Description']
+			print "ERROR: Pushalot Server returned error: {0:d}: {1:s}".format(
+			pastatus, desc)
+		else:
+			print "Pushalot message sent"
+			pass
 
 def sendPushalot(b):
-	print "Push it... Push it real good."
 	http = httplib2.Http()
 	url = 'https://pushalot.com/api/sendmessage'
 	headers = {'Content-type': 'application/x-www-form-urlencoded',
 	'User-Agent': ua}
+	title = "{0:s} ({1:s})".format(ptitle, user)
 	body = {
 		'AuthorizationToken': paauthtoken,
-		'Title': ptitle+' ('+user+')',
+		'Title': title
 		'Body': b,
 		'Image': pimg,
 		'TimeTolive': pttl
 	}
 	try:
-		response = http.request(url, 'POST', headers=headers, body=urllib.urlencode(body))
+		resp, cont = http.request(url, 'POST', headers=headers, body=urllib.urlencode(body))
+		return int(resp['status']), cont
+
 	except Exception, e:
 		pass
-
 if __name__ == '__main__':
 	ua = 'orangered_pusher/0.0.3 by /u/exiva'
 
