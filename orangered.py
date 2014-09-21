@@ -125,7 +125,6 @@ if __name__ == '__main__':
 			cookie = loginReddit(user, passwd)
 			pass
 		elif cookie['status'] == '200':
-			print "Reading mail..."
 			getMe(cookie)
 			time.sleep(poll)
 		pass
