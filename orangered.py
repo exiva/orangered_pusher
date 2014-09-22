@@ -76,8 +76,9 @@ def parseMessage(d):
 			pushdispatcher(msgbody)
 
 def pushdispatcher(msg):
+	title = "{0:s} ({1:s})".format(msgtitle, user)
 	if paenabled:
-		pastatus, content = sendPushalot(msg)
+		pastatus, content = sendPushalot(msg, title)
 		if pastatus != 200:
 			error_json = json.loads(content)
 			desc = error_json['Description']
@@ -87,25 +88,32 @@ def pushdispatcher(msg):
 			print "Pushalot message sent"
 			pass
 	if poenabled:
-		postatus, content = sendPushover(msg)
+		postatus, content = sendPushover(msg, title)
 		if postatus != 200:
 			error_json = json.loads(content)
 			desc = error_json['errors']
-			print "ERROR: Pushalot Server returned error: {0:d}: {1:s}".format(
+			print "ERROR: Pushover Server returned error: {0:d}: {1:s}".format(
 			postatus, desc)
 		else:
-			print "Pushalot message sent"
+			print "Pushover message sent"
+			pass
+	if pbenabled:
+		postatus, content = sendPushbullet(msg, title)
+		if postatus != 200:
+			print "ERROR: Pushbullet Server returned error: {0:d}: {1:s}".format(
+			postatus)
+		else:
+			print "Pushbullet message sent"
 			pass
 
-def sendPushalot(b):
+def sendPushalot(b, t):
 	http = httplib2.Http()
 	url = 'https://pushalot.com/api/sendmessage'
 	headers = {'Content-type': 'application/x-www-form-urlencoded',
 	'User-Agent': ua}
-	title = "{0:s} ({1:s})".format(msgtitle, user)
 	body = {
 		'AuthorizationToken': paauthtoken,
-		'Title': title,
+		'Title': t,
 		'Body': b,
 		'Image': paimg,
 		'TimeTolive': pattl,
@@ -118,16 +126,15 @@ def sendPushalot(b):
 	except Exception, e:
 		pass
 
-def sendPushover(b):
+def sendPushover(b, t):
 	http = httplib2.Http()
 	url = 'https://api.pushover.net/1/messages.json'
 	headers = {'Content-type': 'application/x-www-form-urlencoded',
 	'User-Agent': ua}
-	title = "{0:s} ({1:s})".format(msgtitle, user)
 	body = {
 		'token': 'aU9TRhEJD1fubJiQAKFmQfvkcQd3q9',
 		'user': pousrkey,
-		'title': title,
+		'title': t,
 		'message': b,
 		'url': pushurl,
 		'url_title': pushurltitle
@@ -138,8 +145,26 @@ def sendPushover(b):
 	except Exception, e:
 		pass
 
+def sendPushbullet(b, t):
+	http = httplib2.Http()
+	url = 'https://api.pushbullet.com/v2/pushes'
+	headers = {'Content-type': 'application/x-www-form-urlencoded',
+	'User-Agent': ua}
+	http.add_credentials(pbtoken, '')
+	body = {
+		'type': 'link',
+		'title': t,
+		'body': b,
+		'url': pushurl
+	}
+	try:
+		resp, cont = http.request(url, 'POST', headers=headers, body=urllib.urlencode(body))
+		return int(resp['status']), cont
+	except Exception, e:
+		pass
+
 if __name__ == '__main__':
-	ua = 'orangered_pusher/0.0.4 by /u/exiva'
+	ua = 'orangered_pusher/0.0.5 by /u/exiva'
 
 	settings     = loadCfg('settings.cfg')
 	user         = settings.get('reddit','username')
@@ -156,6 +181,8 @@ if __name__ == '__main__':
 	paimg        = settings.get('pushalot', 'image')
 	poenabled    = settings.getboolean('pushover', 'enabled')
 	pousrkey     = settings.get('pushover', 'key')
+	pbenabled    = settings.getboolean('pushbullet', 'enabled')
+	pbtoken      = settings.get('pushbullet', 'token')
 
 	cookie = loginReddit(user, passwd)
 	lastmsg = 'none';
