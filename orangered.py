@@ -8,6 +8,7 @@ from threading import Timer
 import urllib
 from urllib import urlencode
 import time
+import logging
 
 def loadCfg(settings):
 	config = ConfigParser.ConfigParser()
@@ -24,7 +25,7 @@ def loginReddit(u,p):
 		response, content = http.request(url, 'POST', headers=headers, body=urllib.urlencode(body))
 		return response
 	except Exception, e:
-		print "Login barfed"
+		logging.info('Caught exception logging in. %s', e)
 		pass
 
 def getMe(cookie):
@@ -37,7 +38,7 @@ def getMe(cookie):
 		parseMe(content,cookie)
 
 	except Exception, e:
-		print "Reading barfed"
+		logging.info('Caught exception reading account info. %s', e)
 		pass
 
 def parseMe(d,c):
@@ -56,7 +57,7 @@ def getMessages(cookie):
 		resp, content = http.request(url, 'GET', headers=headers)
 		parseMessage(content)
 	except Exception, e:
-		print e
+		logging.info('Caught exception reading mail. %s', e)
 		pass
 
 def parseMessage(d):
@@ -68,7 +69,7 @@ def parseMessage(d):
 
 	if lastmsg != lastmsg_json['name']:
 		lastmsg = lastmsg_json['name']
-		print "New Message!"
+		logging.info('New Message')
 		if unreads > 1:
 			pushdispatcher("{0:d} {1:s}".format(unreads,msgbodym))
 			pass
@@ -82,28 +83,25 @@ def pushdispatcher(msg):
 		if pastatus != 200:
 			error_json = json.loads(content)
 			desc = error_json['Description']
-			print "ERROR: Pushalot Server returned error: {0:d}: {1:s}".format(
-			pastatus, desc)
+			logging.info('Problem sending pushalot. %d: %s', pastatus, desc)
 		else:
-			print "Pushalot message sent"
+			logging.info('Pushalot message sent')
 			pass
 	if poenabled:
 		postatus, content = sendPushover(msg, title)
 		if postatus != 200:
 			error_json = json.loads(content)
 			desc = error_json['errors']
-			print "ERROR: Pushover Server returned error: {0:d}: {1:s}".format(
-			postatus, desc)
+			logging.info('Problem sending pushover. %d: %s', postatus, desc)
 		else:
-			print "Pushover message sent"
+			logging.info('Pushover message sent')
 			pass
 	if pbenabled:
 		postatus, content = sendPushbullet(msg, title)
 		if postatus != 200:
-			print "ERROR: Pushbullet Server returned error: {0:d}: {1:s}".format(
-			postatus)
+			logging.info('Problem sending pushbullet. %d: %s', pbstatus, desc)
 		else:
-			print "Pushbullet message sent"
+			logging.info('Pushbullet message sent')
 			pass
 
 def sendPushalot(b, t):
@@ -124,6 +122,7 @@ def sendPushalot(b, t):
 		resp, cont = http.request(url, 'POST', headers=headers, body=urllib.urlencode(body))
 		return int(resp['status']), cont
 	except Exception, e:
+		logging.info('Problem sending pushalot. %s', e)
 		pass
 
 def sendPushover(b, t):
@@ -143,6 +142,7 @@ def sendPushover(b, t):
 		resp, cont = http.request(url, 'POST', headers=headers, body=urllib.urlencode(body))
 		return int(resp['status']), cont
 	except Exception, e:
+		logging.info('Problem sending pushover. %s', e)
 		pass
 
 def sendPushbullet(b, t):
@@ -161,6 +161,7 @@ def sendPushbullet(b, t):
 		resp, cont = http.request(url, 'POST', headers=headers, body=urllib.urlencode(body))
 		return int(resp['status']), cont
 	except Exception, e:
+		logging.info('Problem sending pushbullet. %s', e)
 		pass
 
 if __name__ == '__main__':
@@ -175,6 +176,7 @@ if __name__ == '__main__':
 	msgbodym     = settings.get('global', 'multibody')
 	pushurl      = settings.get('global', 'url')
 	pushurltitle = settings.get('global', 'urltitle')
+	logfile      = settings.get('global', 'log')
 	paenabled    = settings.getboolean('pushalot', 'enabled')
 	paauthtoken  = settings.get('pushalot','token')
 	pattl        = settings.get('pushalot', 'ttl')
@@ -184,13 +186,15 @@ if __name__ == '__main__':
 	pbenabled    = settings.getboolean('pushbullet', 'enabled')
 	pbtoken      = settings.get('pushbullet', 'token')
 
+	logging.basicConfig(filename=logfile, level=logging.INFO)
+
 	cookie = loginReddit(user, passwd)
 	lastmsg = 'none';
 
 	#Crude way to run forever. Maybe there's a better way.
 	while True:
 		if cookie == 0 or cookie['status'] != '200':
-			print "Problem logging in. Trying again."
+			logging.info('Problem logging in to reddit. Trying again.')
 			time.sleep(poll)
 			cookie = loginReddit(user, passwd)
 			pass
