@@ -34,15 +34,15 @@ def getMe(cookie):
 	'User-Agent': ua}
 	url = 'https://www.reddit.com/api/me.json'
 	try:
-		content = http.request(url, 'GET', headers=headers)
-		parseMe(content,cookie)
-
+		response, content = http.request(url, 'GET', headers=headers)
+		# parseMe(content,cookie)
+		return response, content, cookie
 	except Exception, e:
 		logging.info('Caught exception reading account info. %s', e)
 		pass
 
 def parseMe(d,c):
-	data_json = json.loads(d[1])
+	data_json = json.loads(d)
 	data = data_json['data']
 
 	if data['has_mail'] or data['has_mod_mail']:
@@ -164,8 +164,22 @@ def sendPushbullet(b, t):
 		logging.info('Problem sending pushbullet. %s', e)
 		pass
 
+def run(c):
+	while True:
+		if c['status'] != '200':
+			logging.info('Problem logging in to reddit. Trying again.')
+			time.sleep(poll)
+			c = loginReddit(user, passwd)
+			pass
+		elif c['status'] == '200':
+			c, r, s = getMe(c)
+			if c['status'] == '200':
+				parseMe(r, s)
+			time.sleep(poll)
+		pass
+
 if __name__ == '__main__':
-	ua = 'orangered_pusher/0.0.5 by /u/exiva'
+	ua = 'orangered_pusher/0.0.6 by /u/exiva'
 
 	settings     = loadCfg('settings.cfg')
 	user         = settings.get('reddit','username')
@@ -188,17 +202,12 @@ if __name__ == '__main__':
 
 	logging.basicConfig(filename=logfile, level=logging.INFO)
 
+	print "Starting {}.\n...Trying to login with {}...".format(ua, user)
 	cookie = loginReddit(user, passwd)
 	lastmsg = 'none';
 
-	#Crude way to run forever. Maybe there's a better way.
-	while True:
-		if cookie == 0 or cookie['status'] != '200':
-			logging.info('Problem logging in to reddit. Trying again.')
-			time.sleep(poll)
-			cookie = loginReddit(user, passwd)
-			pass
-		elif cookie['status'] == '200':
-			getMe(cookie)
-			time.sleep(poll)
-		pass
+	if cookie['status'] == '200':
+		print "Logged in, Checking for new mail."
+		run(cookie)
+	else:
+		print "Couldn't log in. Check credentials and try again."
