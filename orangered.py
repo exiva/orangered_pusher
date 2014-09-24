@@ -164,7 +164,8 @@ def sendPushbullet(b, t):
 		logging.info('Problem sending pushbullet. %s', e)
 		pass
 
-def run(c):
+def run(cookie):
+	c = cookie
 	while True:
 		if c['status'] != '200':
 			logging.info('Problem logging in to reddit. Trying again.')
@@ -172,7 +173,7 @@ def run(c):
 			c = loginReddit(user, passwd)
 			pass
 		elif c['status'] == '200':
-			c, r, s = getMe(c)
+			c, r, s = getMe(cookie)
 			if c['status'] == '200':
 				parseMe(r, s)
 			time.sleep(poll)
