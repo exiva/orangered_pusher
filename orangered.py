@@ -35,13 +35,12 @@ def getMe(cookie):
 	url = 'https://www.reddit.com/api/me.json'
 	try:
 		response, content = http.request(url, 'GET', headers=headers)
-		# parseMe(content,cookie)
-		return response, content, cookie
+		return response, content
 	except Exception, e:
 		logging.info('Caught exception reading account info. %s', e)
 		pass
 
-def parseMe(d,c):
+def parseMe(c,d):
 	data_json = json.loads(d)
 	data = data_json['data']
 
@@ -165,22 +164,22 @@ def sendPushbullet(b, t):
 		pass
 
 def run(cookie):
-	c = cookie
 	while True:
+		c,r = getMe(cookie)
+		if c is None:
+			logging.error("Got no response, reddit is likely down.")
+			time.sleep(poll)
+			cookie = loginReddit(user, passwd)
 		if c['status'] != '200':
-			logging.info('Problem logging in to reddit. Trying again.')
+			logging.error("Reddit threw error %s. Trying to login", c['status'])
 			time.sleep(poll)
-			c = loginReddit(user, passwd)
-			pass
+			cookie = loginReddit(user, passwd)
 		elif c['status'] == '200':
-			c, r, s = getMe(cookie)
-			if c['status'] == '200':
-				parseMe(r, s)
+			parseMe(cookie,r)
 			time.sleep(poll)
-		pass
 
 if __name__ == '__main__':
-	ua = 'orangered_pusher/0.0.6 by /u/exiva'
+	ua = 'orangered_pusher/0.0.7 by /u/exiva'
 
 	settings     = loadCfg('settings.cfg')
 	user         = settings.get('reddit','username')
@@ -204,11 +203,15 @@ if __name__ == '__main__':
 	logging.basicConfig(filename=logfile, level=logging.INFO)
 
 	print "Starting {}.\n...Trying to login with {}...".format(ua, user)
-	cookie = loginReddit(user, passwd)
 	lastmsg = 'none';
 
-	if cookie['status'] == '200':
-		print "Logged in, Checking for new mail."
-		run(cookie)
+	cookie = loginReddit(user, passwd)
+
+	if cookie is None:
+		print "Got no response, Reddit is likely down. Try again."
 	else:
-		print "Couldn't log in. Check credentials and try again."
+		if cookie['status'] == '200':
+			print "Logged in, Checking for new mail."
+			run(cookie)
+		else:
+			print "Couldn't log in. Check credentials and try again."
