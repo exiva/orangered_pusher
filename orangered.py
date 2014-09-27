@@ -23,10 +23,10 @@ def loginReddit(u,p):
 	'User-Agent': ua}
 	try:
 		response, content = http.request(url, 'POST', headers=headers, body=urllib.urlencode(body))
-		return response
 	except Exception, e:
 		logging.info('Caught exception logging in. %s', e)
-		pass
+	else:
+		return response
 
 def getMe(cookie):
 	http = httplib2.Http()
@@ -35,17 +35,11 @@ def getMe(cookie):
 	url = 'https://www.reddit.com/api/me.json'
 	try:
 		response, content = http.request(url, 'GET', headers=headers)
-		return response, content
 	except Exception, e:
 		logging.info('Caught exception reading account info. %s', e)
-		pass
-
-def parseMe(c,d):
-	data_json = json.loads(d)
-	data = data_json['data']
-
-	if data['has_mail'] or data['has_mod_mail']:
-		getMessages(c)
+		return None, None
+	else:
+		return response, content
 
 def getMessages(cookie):
 	http = httplib2.Http()
@@ -54,10 +48,11 @@ def getMessages(cookie):
 	url = 'https://www.reddit.com/message/unread.json'
 	try:
 		resp, content = http.request(url, 'GET', headers=headers)
-		parseMessage(content)
 	except Exception, e:
 		logging.info('Caught exception reading mail. %s', e)
-		pass
+	else:
+		parseMessage(content)
+
 
 def parseMessage(d):
 	msg_json = json.loads(d)
@@ -74,6 +69,13 @@ def parseMessage(d):
 			pass
 		else:
 			pushdispatcher(msgbody)
+
+def parseMe(c,d):
+	data_json = json.loads(d)
+	data = data_json['data']
+
+	if data['has_mail'] or data['has_mod_mail']:
+		getMessages(c)
 
 def pushdispatcher(msg):
 	title = "{0:s} ({1:s})".format(msgtitle, user)
@@ -179,7 +181,7 @@ def run(cookie):
 			time.sleep(poll)
 
 if __name__ == '__main__':
-	ua = 'orangered_pusher/0.0.7 by /u/exiva'
+	ua = 'orangered_pusher/0.0.8 by /u/exiva'
 
 	settings     = loadCfg('settings.cfg')
 	user         = settings.get('reddit','username')
