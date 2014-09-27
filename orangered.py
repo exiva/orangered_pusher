@@ -80,30 +80,11 @@ def parseMe(c,d):
 def pushdispatcher(msg):
 	title = "{0:s} ({1:s})".format(msgtitle, user)
 	if paenabled:
-		pastatus, content = sendPushalot(msg, title)
-		if pastatus != 200:
-			error_json = json.loads(content)
-			desc = error_json['Description']
-			logging.info('Problem sending pushalot. %d: %s', pastatus, desc)
-		else:
-			logging.info('Pushalot message sent')
-			pass
+		sendPushalot(msg, title)
 	if poenabled:
-		postatus, content = sendPushover(msg, title)
-		if postatus != 200:
-			error_json = json.loads(content)
-			desc = error_json['errors']
-			logging.info('Problem sending pushover. %d: %s', postatus, desc)
-		else:
-			logging.info('Pushover message sent')
-			pass
+		sendPushover(msg, title)
 	if pbenabled:
-		postatus, content = sendPushbullet(msg, title)
-		if postatus != 200:
-			logging.info('Problem sending pushbullet. %d: %s', pbstatus, desc)
-		else:
-			logging.info('Pushbullet message sent')
-			pass
+		sendPushbullet(msg, title)
 
 def sendPushalot(b, t):
 	http = httplib2.Http()
@@ -121,10 +102,16 @@ def sendPushalot(b, t):
 	}
 	try:
 		resp, cont = http.request(url, 'POST', headers=headers, body=urllib.urlencode(body))
-		return int(resp['status']), cont
 	except Exception, e:
 		logging.info('Problem sending pushalot. %s', e)
-		pass
+	else:
+		if int(resp['status']) != 200:
+			error_json = json.loads(cont)
+			desc = error_json['Description']
+			logging.info('Problem sending pushalot. %s: %s', resp['status'], desc)
+		else:
+			logging.info('Pushalot message sent')
+			pass
 
 def sendPushover(b, t):
 	http = httplib2.Http()
@@ -141,17 +128,23 @@ def sendPushover(b, t):
 	}
 	try:
 		resp, cont = http.request(url, 'POST', headers=headers, body=urllib.urlencode(body))
-		return int(resp['status']), cont
 	except Exception, e:
 		logging.info('Problem sending pushover. %s', e)
-		pass
+	else:
+		if int(resp['status']) != 200:
+			error_json = json.loads(cont)
+			desc = error_json['errors']
+			logging.info('Problem sending pushover. %s: %s', resp['status'], desc)
+		else:
+			logging.info('Pushover message sent')
+			pass
 
 def sendPushbullet(b, t):
 	http = httplib2.Http()
 	url = 'https://api.pushbullet.com/v2/pushes'
 	headers = {'Content-type': 'application/x-www-form-urlencoded',
 	'User-Agent': ua}
-	http.add_credentials(pbtoken, '')
+	http.add_credentials("thisdoesntwork", '')
 	body = {
 		'type': 'link',
 		'title': t,
@@ -160,10 +153,17 @@ def sendPushbullet(b, t):
 	}
 	try:
 		resp, cont = http.request(url, 'POST', headers=headers, body=urllib.urlencode(body))
-		return int(resp['status']), cont
 	except Exception, e:
 		logging.info('Problem sending pushbullet. %s', e)
-		pass
+	else:
+		if int(resp['status']) != 200:
+			error_json = json.loads(cont)
+			desc = error_json['error']['message']
+			logging.info('Problem sending pushbullet. %s: %s', resp['status'], desc)
+		else:
+			logging.info('Pushbullet message sent')
+			pass
+
 
 def run(cookie):
 	while True:
@@ -181,7 +181,7 @@ def run(cookie):
 			time.sleep(poll)
 
 if __name__ == '__main__':
-	ua = 'orangered_pusher/0.0.8 by /u/exiva'
+	ua = 'orangered_pusher/0.0.9 by /u/exiva'
 
 	settings     = loadCfg('settings.cfg')
 	user         = settings.get('reddit','username')
