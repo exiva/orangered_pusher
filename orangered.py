@@ -144,7 +144,7 @@ def sendPushbullet(b, t):
 	url = 'https://api.pushbullet.com/v2/pushes'
 	headers = {'Content-type': 'application/x-www-form-urlencoded',
 	'User-Agent': ua}
-	http.add_credentials("thisdoesntwork", '')
+	http.add_credentials(pbtoken, '')
 	body = {
 		'type': 'link',
 		'title': t,
