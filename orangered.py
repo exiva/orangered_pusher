@@ -55,27 +55,35 @@ def getMessages(cookie):
 
 
 def parseMessage(d):
-	msg_json = json.loads(d)
-	lastmsg_json = msg_json['data']['children'][0]['data']
-	global lastmsg
+	try:
+		msg_json = json.loads(d)
+	except json.JSONDecodeError, e:
+		logging.error('Error parsing json. %s', e)
+	else:
+		lastmsg_json = msg_json['data']['children'][0]['data']
+		global lastmsg
 
-	unreads = len(msg_json['data']['children'])
+		unreads = len(msg_json['data']['children'])
 
-	if lastmsg != lastmsg_json['name']:
-		lastmsg = lastmsg_json['name']
-		logging.info('New Message')
-		if unreads > 1:
-			pushdispatcher("{0:d} {1:s}".format(unreads,msgbodym))
-			pass
-		else:
-			pushdispatcher(msgbody)
+		if lastmsg != lastmsg_json['name']:
+			lastmsg = lastmsg_json['name']
+			logging.info('New Message')
+			if unreads > 1:
+				pushdispatcher("{0:d} {1:s}".format(unreads,msgbodym))
+				pass
+			else:
+				pushdispatcher(msgbody)
 
 def parseMe(c,d):
-	data_json = json.loads(d)
-	data = data_json['data']
+	try:
+		data_json = json.loads(d)
+	except json.JSONDecodeError, e:
+		logging.error('Error parsing json. %s', e)
+	else:
+		data = data_json['data']
 
-	if data['has_mail'] or data['has_mod_mail']:
-		getMessages(c)
+		if data['has_mail'] or data['has_mod_mail']:
+			getMessages(c)
 
 def pushdispatcher(msg):
 	title = "{0:s} ({1:s})".format(msgtitle, user)
@@ -106,9 +114,13 @@ def sendPushalot(b, t):
 		logging.info('Problem sending pushalot. %s', e)
 	else:
 		if int(resp['status']) != 200:
-			error_json = json.loads(cont)
-			desc = error_json['Description']
-			logging.info('Problem sending pushalot. %s: %s', resp['status'], desc)
+			try:
+				error_json = json.loads(cont)
+			except json.JSONDecodeError:
+				logging.error('Couldn\'t decode json')
+			else:
+				desc = error_json['Description']
+				logging.info('Problem sending pushalot. %s: %s', resp['status'], desc)
 		else:
 			logging.info('Pushalot message sent')
 			pass
@@ -129,12 +141,16 @@ def sendPushover(b, t):
 	try:
 		resp, cont = http.request(url, 'POST', headers=headers, body=urllib.urlencode(body))
 	except Exception, e:
-		logging.info('Problem sending pushover. %s', e)
+		logging.error('Problem sending pushover. %s', e)
 	else:
 		if int(resp['status']) != 200:
-			error_json = json.loads(cont)
-			desc = error_json['errors']
-			logging.info('Problem sending pushover. %s: %s', resp['status'], desc)
+			try:
+				error_json = json.loads(cont)
+			except json.JSONDecodeError:
+				logging.error('Couldn\'t decode json')
+			else:
+				desc = error_json['errors']
+				logging.error('Problem sending pushover. %s: %s', resp['status'], desc)
 		else:
 			logging.info('Pushover message sent')
 			pass
@@ -154,12 +170,16 @@ def sendPushbullet(b, t):
 	try:
 		resp, cont = http.request(url, 'POST', headers=headers, body=urllib.urlencode(body))
 	except Exception, e:
-		logging.info('Problem sending pushbullet. %s', e)
+		logging.error('Problem sending pushbullet. %s', e)
 	else:
 		if int(resp['status']) != 200:
-			error_json = json.loads(cont)
-			desc = error_json['error']['message']
-			logging.info('Problem sending pushbullet. %s: %s', resp['status'], desc)
+			try:
+				error_json = json.loads(cont)
+			except json.JSONDecodeError:
+				logging.error('Couldn\'t decode json')
+			else:
+				desc = error_json['error']['message']
+				logging.error('Problem sending pushbullet. %s: %s', resp['status'], desc)
 		else:
 			logging.info('Pushbullet message sent')
 			pass
