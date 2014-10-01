@@ -14,10 +14,10 @@ def loadCfg(settings):
 	config.read(settings)
 	return config
 
-def loginReddit(u,p):
+def loginReddit(user,password):
 	http = httplib2.Http()
 	url = 'https://www.reddit.com/api/login'
-	body = {'user': u, 'passwd': p}
+	body = {'user': user, 'passwd': password}
 	headers = {'Content-type': 'application/x-www-form-urlencoded',
 	'User-Agent': ua}
 	try:
@@ -54,9 +54,9 @@ def getMessages(cookie):
 		parseMessage(content)
 
 
-def parseMessage(d):
+def parseMessage(data):
 	try:
-		msg_json = json.loads(d)
+		msg_json = json.loads(data)
 	except json.JSONDecodeError, e:
 		logging.error('Error parsing json. %s', e)
 	else:
@@ -74,16 +74,16 @@ def parseMessage(d):
 			else:
 				pushdispatcher(msgbody)
 
-def parseMe(c,d):
+def parseMe(cookie,data):
 	try:
-		data_json = json.loads(d)
+		data_json = json.loads(data)
 	except json.JSONDecodeError, e:
 		logging.error('Error parsing json. %s', e)
 	else:
 		data = data_json['data']
 
 		if data['has_mail'] or data['has_mod_mail']:
-			getMessages(c)
+			getMessages(cookie)
 
 def pushdispatcher(msg):
 	title = "{0:s} ({1:s})".format(msgtitle, user)
@@ -94,15 +94,15 @@ def pushdispatcher(msg):
 	if pbenabled:
 		sendPushbullet(msg, title)
 
-def sendPushalot(b, t):
+def sendPushalot(body, title):
 	http = httplib2.Http()
 	url = 'https://pushalot.com/api/sendmessage'
 	headers = {'Content-type': 'application/x-www-form-urlencoded',
 	'User-Agent': ua}
 	body = {
 		'AuthorizationToken': paauthtoken,
-		'Title': t,
-		'Body': b,
+		'Title': title,
+		'Body': body,
 		'Image': paimg,
 		'TimeTolive': pattl,
 		'Link': pushurl,
@@ -127,7 +127,7 @@ def sendPushalot(b, t):
 			logging.info('Pushalot message sent')
 			pass
 
-def sendPushover(b, t):
+def sendPushover(body, title):
 	http = httplib2.Http()
 	url = 'https://api.pushover.net/1/messages.json'
 	headers = {'Content-type': 'application/x-www-form-urlencoded',
@@ -135,8 +135,8 @@ def sendPushover(b, t):
 	body = {
 		'token': 'aU9TRhEJD1fubJiQAKFmQfvkcQd3q9',
 		'user': pousrkey,
-		'title': t,
-		'message': b,
+		'title': title,
+		'message': body,
 		'url': pushurl,
 		'url_title': pushurltitle
 	}
@@ -159,7 +159,7 @@ def sendPushover(b, t):
 			logging.info('Pushover message sent')
 			pass
 
-def sendPushbullet(b, t):
+def sendPushbullet(body, title):
 	http = httplib2.Http()
 	url = 'https://api.pushbullet.com/v2/pushes'
 	headers = {'Content-type': 'application/x-www-form-urlencoded',
@@ -167,8 +167,8 @@ def sendPushbullet(b, t):
 	http.add_credentials(pbtoken, '')
 	body = {
 		'type': 'link',
-		'title': t,
-		'body': b,
+		'title': title,
+		'body': body,
 		'url': pushurl
 	}
 	try:
