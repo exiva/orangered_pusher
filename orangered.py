@@ -6,7 +6,6 @@ import urllib2
 import simplejson as json
 from threading import Timer
 import urllib
-from urllib import urlencode
 import time
 import logging
 
