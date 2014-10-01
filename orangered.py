@@ -237,9 +237,8 @@ if __name__ == '__main__':
 
 	if cookie is None:
 		print "Got no response, Reddit is likely down. Try again."
+	elif cookie['status'] == '200':
+		print "Logged in, Checking for new mail."
+		run(cookie)
 	else:
-		if cookie['status'] == '200':
-			print "Logged in, Checking for new mail."
-			run(cookie)
-		else:
-			print "Couldn't log in. Check credentials and try again."
+		print "Couldn't log in. Check credentials and try again."
