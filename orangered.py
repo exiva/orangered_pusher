@@ -21,9 +21,9 @@ def loginReddit(u,p):
 	headers = {'Content-type': 'application/x-www-form-urlencoded',
 	'User-Agent': ua}
 	try:
-	except Exception, e:
 		response, content = http.request(url, 'POST', headers=headers,
 		body=urllib.urlencode(body))
+	except Exception as e:
 		logging.info('Caught exception logging in. %s', e)
 	else:
 		return response
@@ -35,7 +35,7 @@ def getMe(cookie):
 	url = 'https://www.reddit.com/api/me.json'
 	try:
 		response, content = http.request(url, 'GET', headers=headers)
-	except Exception, e:
+	except Exception as e:
 		logging.info('Caught exception reading account info. %s', e)
 		return None, None
 	else:
@@ -48,7 +48,7 @@ def getMessages(cookie):
 	url = 'https://www.reddit.com/message/unread.json'
 	try:
 		resp, content = http.request(url, 'GET', headers=headers)
-	except Exception, e:
+	except Exception as e:
 		logging.info('Caught exception reading mail. %s', e)
 	else:
 		parseMessage(content)
@@ -109,9 +109,9 @@ def sendPushalot(b, t):
 		'LinkTitle': pushurltitle
 	}
 	try:
-	except Exception, e:
 		resp, cont = http.request(url, 'POST', headers=headers,
 		body=urllib.urlencode(body))
+	except Exception as e:
 		logging.info('Problem sending pushalot. %s', e)
 	else:
 		if int(resp['status']) != 200:
@@ -141,9 +141,9 @@ def sendPushover(b, t):
 		'url_title': pushurltitle
 	}
 	try:
-	except Exception, e:
 		resp, cont = http.request(url, 'POST', headers=headers,
 		body=urllib.urlencode(body))
+	except Exception as e:
 		logging.error('Problem sending pushover. %s', e)
 	else:
 		if int(resp['status']) != 200:
@@ -172,9 +172,9 @@ def sendPushbullet(b, t):
 		'url': pushurl
 	}
 	try:
-	except Exception, e:
 		resp, cont = http.request(url, 'POST', headers=headers,
 		body=urllib.urlencode(body))
+	except Exception as e:
 		logging.error('Problem sending pushbullet. %s', e)
 	else:
 		if int(resp['status']) != 200:
