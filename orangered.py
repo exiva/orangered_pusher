@@ -21,8 +21,9 @@ def loginReddit(u,p):
 	headers = {'Content-type': 'application/x-www-form-urlencoded',
 	'User-Agent': ua}
 	try:
-		response, content = http.request(url, 'POST', headers=headers, body=urllib.urlencode(body))
 	except Exception, e:
+		response, content = http.request(url, 'POST', headers=headers,
+		body=urllib.urlencode(body))
 		logging.info('Caught exception logging in. %s', e)
 	else:
 		return response
@@ -108,8 +109,9 @@ def sendPushalot(b, t):
 		'LinkTitle': pushurltitle
 	}
 	try:
-		resp, cont = http.request(url, 'POST', headers=headers, body=urllib.urlencode(body))
 	except Exception, e:
+		resp, cont = http.request(url, 'POST', headers=headers,
+		body=urllib.urlencode(body))
 		logging.info('Problem sending pushalot. %s', e)
 	else:
 		if int(resp['status']) != 200:
@@ -119,7 +121,8 @@ def sendPushalot(b, t):
 				logging.error('Couldn\'t decode json')
 			else:
 				desc = error_json['Description']
-				logging.info('Problem sending pushalot. %s: %s', resp['status'], desc)
+				logging.info('Problem sending pushalot. %s: %s',
+				resp['status'], desc)
 		else:
 			logging.info('Pushalot message sent')
 			pass
@@ -138,8 +141,9 @@ def sendPushover(b, t):
 		'url_title': pushurltitle
 	}
 	try:
-		resp, cont = http.request(url, 'POST', headers=headers, body=urllib.urlencode(body))
 	except Exception, e:
+		resp, cont = http.request(url, 'POST', headers=headers,
+		body=urllib.urlencode(body))
 		logging.error('Problem sending pushover. %s', e)
 	else:
 		if int(resp['status']) != 200:
@@ -149,7 +153,8 @@ def sendPushover(b, t):
 				logging.error('Couldn\'t decode json')
 			else:
 				desc = error_json['errors']
-				logging.error('Problem sending pushover. %s: %s', resp['status'], desc)
+				logging.error('Problem sending pushover. %s: %s',
+				resp['status'], desc)
 		else:
 			logging.info('Pushover message sent')
 			pass
@@ -167,8 +172,9 @@ def sendPushbullet(b, t):
 		'url': pushurl
 	}
 	try:
-		resp, cont = http.request(url, 'POST', headers=headers, body=urllib.urlencode(body))
 	except Exception, e:
+		resp, cont = http.request(url, 'POST', headers=headers,
+		body=urllib.urlencode(body))
 		logging.error('Problem sending pushbullet. %s', e)
 	else:
 		if int(resp['status']) != 200:
@@ -178,7 +184,8 @@ def sendPushbullet(b, t):
 				logging.error('Couldn\'t decode json')
 			else:
 				desc = error_json['error']['message']
-				logging.error('Problem sending pushbullet. %s: %s', resp['status'], desc)
+				logging.error('Problem sending pushbullet. %s: %s',
+				resp['status'], desc)
 		else:
 			logging.info('Pushbullet message sent')
 			pass
