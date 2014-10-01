@@ -193,12 +193,13 @@ def sendPushbullet(body, title):
 
 def run(cookie):
 	while True:
-		c,r = getMe(cookie)
-		if c is None:
+		if cookie is not None:
+			c,r = getMe(cookie)
+		if c is None or cookie is None:
 			logging.error("Got no response, reddit is likely down.")
 			time.sleep(poll)
 			cookie = loginReddit(user, passwd)
-		if c['status'] != '200':
+		elif c['status'] != '200':
 			logging.error("Reddit threw error %s. Trying to login", c['status'])
 			time.sleep(poll)
 			cookie = loginReddit(user, passwd)
@@ -207,7 +208,7 @@ def run(cookie):
 			time.sleep(poll)
 
 if __name__ == '__main__':
-	ua = 'orangered_pusher/0.0.9 by /u/exiva'
+	ua = 'orangered_pusher/0.1.0 by /u/exiva'
 
 	settings     = loadCfg('settings.cfg')
 	user         = settings.get('reddit','username')
