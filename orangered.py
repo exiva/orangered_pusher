@@ -80,10 +80,13 @@ def parseMe(cookie,data):
 	except json.JSONDecodeError, e:
 		logging.error('Error parsing json. %s', e)
 	else:
-		data = data_json['data']
+		if 'data' in data_json:
+			data = data_json['data']
 
-		if data['has_mail'] or data['has_mod_mail']:
-			getMessages(cookie)
+			if data['has_mail'] or data['has_mod_mail']:
+				getMessages(cookie)
+		else:
+			logging.error('Reddit returned bad json.\n Response: %s\n', data)
 
 def pushdispatcher(msg):
 	title = "{0:s} ({1:s})".format(msgtitle, user)
@@ -208,7 +211,7 @@ def run(cookie):
 			time.sleep(poll)
 
 if __name__ == '__main__':
-	ua = 'orangered_pusher/0.1.0 by /u/exiva'
+	ua = 'orangered_pusher/0.1.1 by /u/exiva'
 
 	settings     = loadCfg('settings.cfg')
 	user         = settings.get('reddit','username')
