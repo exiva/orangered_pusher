@@ -2,8 +2,9 @@
 
 import ConfigParser
 import httplib2
-import urllib2
-import simplejson as json
+import requests
+# import urllib2
+# import simplejson as json
 from threading import Timer
 import urllib
 import time
@@ -14,32 +15,34 @@ def loadCfg(settings):
 	config.read(settings)
 	return config
 
-def loginReddit(user,password):
-	http = httplib2.Http()
-	url = 'https://www.reddit.com/api/login'
-	body = {'user': user, 'passwd': password}
-	headers = {'Content-type': 'application/x-www-form-urlencoded',
-	'User-Agent': ua}
+def loginReddit(user,password,clientid,secret):
+	url = 'https://ssl.reddit.com/api/v1/access_token'
+	data = {'grant_type': 'password', 'username': user,
+			'password': password}
+	headers = {'User-Agent': ua}
 	try:
-		response, content = http.request(url, 'POST', headers=headers,
-		body=urllib.urlencode(body))
-	except Exception as e:
+		r = requests.post(url, data=data, auth=(clientid,secret),
+							headers=headers)
+	except requests.exceptions.RequestException as e:
 		logging.info('Caught exception logging in. %s', e)
 	else:
-		return response
+		try:
+			data = r.json()
+		except ValueError as e:
+			logging.info('Caught exception logging in. %s', e)
+		else:
+			return data
 
-def getMe(cookie):
-	http = httplib2.Http()
-	headers = {'Cookie': cookie['set-cookie'],
-	'User-Agent': ua}
-	url = 'https://www.reddit.com/api/me.json'
+def getMe(token,tokentype):
+	url = 'https://oauth.reddit.com/api/v1/me'
+	headers = {'Authorization': '{0:s} {1:s}'.format(tokentype,token),
+				'User-Agent': ua}
 	try:
-		response, content = http.request(url, 'GET', headers=headers)
-	except Exception as e:
+		r = requests.get(url, headers=headers)
+	except requests.exceptions.RequestException as e:
 		logging.info('Caught exception reading account info. %s', e)
-		return None, None
 	else:
-		return response, content
+		return r.json(), r.status_code
 
 def getMessages(cookie):
 	http = httplib2.Http()
@@ -100,8 +103,7 @@ def pushdispatcher(msg):
 def sendPushalot(body, title):
 	http = httplib2.Http()
 	url = 'https://pushalot.com/api/sendmessage'
-	headers = {'Content-type': 'application/x-www-form-urlencoded',
-	'User-Agent': ua}
+	headers = { 'User-Agent': ua }
 	body = {
 		'AuthorizationToken': paauthtoken,
 		'Title': title,
@@ -194,20 +196,23 @@ def sendPushbullet(body, title):
 			pass
 
 
-def run(cookie):
+def run(loginresponse):
 	while True:
-		if cookie is not None:
-			c,r = getMe(cookie)
-		if c is None or cookie is None:
+		if loginresponse is not None:
+			resp, status = getMe(loginresponse['access_token'], 
+								 loginresponse['token_type'])
+		if resp is None or status is None:
 			logging.error("Got no response, reddit is likely down.")
 			time.sleep(poll)
-			cookie = loginReddit(user, passwd)
-		elif c['status'] != '200':
-			logging.error("Reddit threw error %s. Trying to login", c['status'])
+			loginresponse = loginReddit(user, passwd, clientid, secret)
+		elif status != 200:
+			print "Error."
+			logging.error("Reddit threw error %s. Trying to login", status)
 			time.sleep(poll)
-			cookie = loginReddit(user, passwd)
-		elif c['status'] == '200':
-			parseMe(cookie,r)
+			loginresponse = loginReddit(user, passwd, clientid, secret)
+		elif status == 200:
+			print "sallgood."
+			parseMe()
 			time.sleep(poll)
 
 if __name__ == '__main__':
@@ -216,6 +221,8 @@ if __name__ == '__main__':
 	settings     = loadCfg('settings.cfg')
 	user         = settings.get('reddit','username')
 	passwd       = settings.get('reddit', 'password')
+	clientid	 = settings.get('reddit', 'clientid')
+	secret		 = settings.get('reddit', 'secret')
 	poll         = settings.getint('reddit','poll')
 	msgtitle     = settings.get('global', 'title')
 	msgbody      = settings.get('global', 'body')
@@ -237,12 +244,13 @@ if __name__ == '__main__':
 	print "Starting {}.\n...Trying to login with {}...".format(ua, user)
 	lastmsg = 'none';
 
-	cookie = loginReddit(user, passwd)
+	logindata = loginReddit(user, passwd, clientid, secret)
 
-	if cookie is None:
+	print logindata
+	
+	if logindata.get('access_token') is None:
 		print "Got no response, Reddit is likely down. Try again."
-	elif cookie['status'] == '200':
-		print "Logged in, Checking for new mail."
-		run(cookie)
 	else:
-		print "Couldn't log in. Check credentials and try again."
+		print "Logged in, Checking for new mail."
+		print logindata.get('access_token')
+		run(logindata)
