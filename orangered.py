@@ -27,11 +27,11 @@ def loginReddit(user,password,clientid,secret):
 		logging.info('Caught exception logging in. %s', e)
 	else:
 		try:
-			data = r.json()
+			r.json()
 		except ValueError as e:
 			logging.info('Caught exception logging in. %s', e)
 		else:
-			return data
+			return r.json()
 
 def getMe(token,tokentype):
 	url = 'https://oauth.reddit.com/api/v1/me'
@@ -42,54 +42,49 @@ def getMe(token,tokentype):
 	except requests.exceptions.RequestException as e:
 		logging.info('Caught exception reading account info. %s', e)
 	else:
-		return r.json(), r.status_code
+		try:
+			r.json()
+		except ValueError as e:
+			logging.info('JSON Data was shit. %s', e)
+		else:
+			return r.json(), r.status_code
 
-def getMessages(cookie):
-	http = httplib2.Http()
-	headers = {'Cookie': cookie['set-cookie'],
-	'User-Agent': ua}
-	url = 'https://www.reddit.com/message/unread.json'
+def getMessages(token, tokentype):
+	url = 'https://oauth.reddit.com/message/unread.json'
+	headers = {'Authorization': '{0:s} {1:s}'.format(tokentype,token),
+				'User-Agent': ua}
 	try:
-		resp, content = http.request(url, 'GET', headers=headers)
-	except Exception as e:
+		r = requests.get(url, headers=headers)
+	except requests.exceptions.RequestException as e:
 		logging.info('Caught exception reading mail. %s', e)
 	else:
-		parseMessage(content)
+		try:
+			r.json()
+		except ValueError as e:
+			logging.info('Shit data. %s', e)
+		else:
+			parseMessage(r.json())
 
 
 def parseMessage(data):
-	try:
-		msg_json = json.loads(data)
-	except json.JSONDecodeError, e:
-		logging.error('Error parsing json. %s', e)
-	else:
-		lastmsg_json = msg_json['data']['children'][0]['data']
-		global lastmsg
+	lastmsg_json = data['data']['children'][0]['data']
 
-		unreads = len(msg_json['data']['children'])
+	global lastmsg
 
-		if lastmsg != lastmsg_json['name']:
-			lastmsg = lastmsg_json['name']
-			logging.info('New Message')
-			if unreads > 1:
-				pushdispatcher("{0:d} {1:s}".format(unreads,msgbodym))
-				pass
-			else:
-				pushdispatcher(msgbody)
+	unreads = len(data['data']['children'])
 
-def parseMe(cookie,data):
-	try:
-		data_json = json.loads(data)
-	except json.JSONDecodeError, e:
-		logging.error('Error parsing json. %s', e)
-	else:
-		if 'data' in data_json:
-			data = data_json['data']
-
-			if data['has_mail'] or data['has_mod_mail']:
-				getMessages(cookie)
+	if lastmsg != lastmsg_json['name']:
+		lastmsg = lastmsg_json['name']
+		logging.info('New Message')
+		if unreads > 1:
+			pushdispatcher("{0:d} {1:s}".format(unreads,msgbodym))
+			pass
 		else:
-			logging.error('Reddit returned bad json.\n Response: %s\n', data)
+			pushdispatcher(msgbody)
+
+def parseMe(data, token, tokentype):	
+	if data['has_mail'] or data['has_mod_mail']:
+		getMessages(token, tokentype)
 
 def pushdispatcher(msg):
 	title = "{0:s} ({1:s})".format(msgtitle, user)
@@ -114,23 +109,23 @@ def sendPushalot(body, title):
 		'LinkTitle': pushurltitle
 	}
 	try:
-		resp, cont = http.request(url, 'POST', headers=headers,
-		body=urllib.urlencode(body))
-	except Exception as e:
-		logging.info('Problem sending pushalot. %s', e)
+		r = requests.post(url, headers=headers, data=body)
+	except requests.exceptions.RequestException as e:
+		logging.error("Shit went down. %s", e)
 	else:
-		if int(resp['status']) != 200:
-			try:
-				error_json = json.loads(cont)
-			except json.JSONDecodeError:
-				logging.error('Couldn\'t decode json')
-			else:
-				desc = error_json['Description']
-				logging.info('Problem sending pushalot. %s: %s',
-				resp['status'], desc)
+		try:
+			json = r.json()
+		except ValueError as e:
+			logging.error("Shit was bad. %s", e)
 		else:
-			logging.info('Pushalot message sent')
-			pass
+			if r.status_code is not 200:
+				logging.error('Problem sending pushalot. %s: %s',
+				r.status_code, json['Description'])
+			elif int(json['Status']) == 200:
+				logging.info('Pushalot message sent')
+			else:
+				logging.error("Something went terribly wrong.")
+
 
 def sendPushover(body, title):
 	http = httplib2.Http()
@@ -212,11 +207,12 @@ def run(loginresponse):
 			loginresponse = loginReddit(user, passwd, clientid, secret)
 		elif status == 200:
 			print "sallgood."
-			parseMe()
+			print resp
+			parseMe(resp, loginresponse['access_token'], loginresponse['token_type'])
 			time.sleep(poll)
 
 if __name__ == '__main__':
-	ua = 'orangered_pusher/0.1.1 by /u/exiva'
+	ua = 'python: orangered_pusher/0.2.0 by /u/exiva'
 
 	settings     = loadCfg('settings.cfg')
 	user         = settings.get('reddit','username')
