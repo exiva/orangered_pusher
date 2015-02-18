@@ -39,8 +39,10 @@ def getMe(token,tokentype):
 				'User-Agent': ua}
 	try:
 		r = requests.get(url, headers=headers)
-	except requests.exceptions.RequestException as e:
+	# except requests.exceptions.RequestException as e:
+	except requests.exceptions.ConnectionError as e:
 		logging.info('Caught exception reading account info. %s', e)
+		return None, None
 	else:
 		try:
 			r.json()
@@ -194,22 +196,19 @@ def sendPushbullet(body, title):
 def run(loginresponse):
 	while True:
 		if loginresponse is not None:
-			resp, status = getMe(loginresponse['access_token'], 
-								 loginresponse['token_type'])
-		if resp is None or status is None:
+			resp, status = getMe(loginresponse['access_token'], loginresponse['token_type'])
+			if status is not 200:
+				logging.error("Reddit returned %s. Trying to login", status)
+				time.sleep(poll)
+				lgoinresponse = loginReddit(user, passwd, clientid, secret)
+			elif status is 200:
+				parseMe(resp, loginresponse['access_token'], loginresponse['token_type'])
+				time.sleep(poll)
+		else:
 			logging.error("Got no response, reddit is likely down.")
 			time.sleep(poll)
 			loginresponse = loginReddit(user, passwd, clientid, secret)
-		elif status != 200:
-			print "Error."
-			logging.error("Reddit threw error %s. Trying to login", status)
-			time.sleep(poll)
-			loginresponse = loginReddit(user, passwd, clientid, secret)
-		elif status == 200:
-			print "sallgood."
-			print resp
-			parseMe(resp, loginresponse['access_token'], loginresponse['token_type'])
-			time.sleep(poll)
+
 
 if __name__ == '__main__':
 	ua = 'python: orangered_pusher/0.2.0 by /u/exiva'
@@ -238,15 +237,14 @@ if __name__ == '__main__':
 	logging.basicConfig(filename=logfile, level=logging.INFO)
 
 	print "Starting {}.\n...Trying to login with {}...".format(ua, user)
-	lastmsg = 'none';
+	lastmsg = 'none'
+
+	loginresponse = "foo"
 
 	logindata = loginReddit(user, passwd, clientid, secret)
 
-	print logindata
-	
-	if logindata.get('access_token') is None:
-		print "Got no response, Reddit is likely down. Try again."
+	if logindata is None:
+		print "Got no response, Reddit is liekly down. Try again."
 	else:
-		print "Logged in, Checking for new mail."
-		print logindata.get('access_token')
+		print "Logged in. Checking for new mail..."
 		run(logindata)
