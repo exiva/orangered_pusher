@@ -106,7 +106,6 @@ def pushdispatcher(msg):
 		sendPushbullet(msg, title)
 
 def sendPushalot(body, title):
-	http = httplib2.Http()
 	url = 'https://pushalot.com/api/sendmessage'
 	headers = { 'User-Agent': ua }
 	body = {
@@ -166,11 +165,9 @@ def sendPushover(body, title):
 			logging.info('Pushover message sent')
 
 def sendPushbullet(body, title):
-	http = httplib2.Http()
 	url = 'https://api.pushbullet.com/v2/pushes'
 	headers = {'Content-type': 'application/x-www-form-urlencoded',
 	'User-Agent': ua}
-	http.add_credentials(pbtoken, '')
 	body = {
 		'type': 'link',
 		'title': title,
@@ -178,23 +175,20 @@ def sendPushbullet(body, title):
 		'url': pushurl
 	}
 	try:
-		resp, cont = http.request(url, 'POST', headers=headers,
-		body=urllib.urlencode(body))
-	except Exception as e:
-		logging.error('Problem sending pushbullet. %s', e)
+		r = requests.post(url, headers=headers, data=body, auth=(pbtoken,''))
+	except requests.exceptions.RequestException as e:
+		logging.error("Shit went down. %s", e)
 	else:
-		if int(resp['status']) != 200:
+		if r.status_code is not 200:
 			try:
-				error_json = json.loads(cont)
-			except json.JSONDecodeError:
-				logging.error('Couldn\'t decode json')
+				json = r.json()
+			except ValueError:
+				logging.error("Bad json.")
 			else:
-				desc = error_json['error']['message']
 				logging.error('Problem sending pushbullet. %s: %s',
-				resp['status'], desc)
+					r.status_code, json['status'])
 		else:
 			logging.info('Pushbullet message sent')
-			pass
 
 
 def run(loginresponse):
