@@ -205,17 +205,19 @@ def run(loginresponse):
 	while True:
 		if loginresponse is not None:
 			resp, status = getMe(loginresponse['access_token'], loginresponse['token_type'])
-			if status is not 200:
-				logging.error("Reddit returned %s. Trying to login", status)
-				time.sleep(poll)
-				lgoinresponse = loginReddit(user, passwd, clientid, secret)
-			elif status is 200:
+			if status is 200:
 				parseMe(resp, loginresponse['access_token'], loginresponse['token_type'])
 				time.sleep(poll)
+			elif status is 401:  #token expired
+				loginresponse = loginReddit(user, passwd, clientid, secret)
+				time.sleep(poll)
+			else:
+				logging.error("Reddit returned %s. Trying to login", status)
+				time.sleep(poll)
+				loginresponse = loginReddit(user, passwd, clientid, secret)
 		else:
 			logging.error("Got no response, reddit is likely down.")
 			time.sleep(poll)
-			loginresponse = loginReddit(user, passwd, clientid, secret)
 
 
 if __name__ == '__main__':
@@ -247,12 +249,12 @@ if __name__ == '__main__':
 	print "Starting {}.\n...Trying to login with {}...".format(ua, user)
 	lastmsg = 'none'
 
-	loginresponse = "foo"
-
 	logindata = loginReddit(user, passwd, clientid, secret)
 
-	if logindata is None:
-		print "Got no response, Reddit is liekly down. Try again."
+	try:
+		logindata['access_token']
+	except KeyError as e:
+		print "Couldn't login. Check credentials and try again."
 	else:
 		print "Logged in. Checking for new mail..."
 		run(logindata)
