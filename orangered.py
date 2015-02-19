@@ -11,15 +11,16 @@ def loadCfg(settings):
 	return config
 
 def loginReddit(user,password,clientid,secret):
-	url = 'https://ssl.reddit.com/api/v1/access_token'
+	url = 'https://www.reddit.com/api/v1/access_token'
 	data = {'grant_type': 'password', 'username': user,
 			'password': password}
 	headers = {'User-Agent': ua}
 	try:
 		r = requests.post(url, data=data, auth=(clientid,secret),
 							headers=headers)
-	except requests.exceptions.RequestException as e:
-		logging.info('Caught exception logging in. %s', e)
+	except requests.exceptions.ConnectionError as e:
+		logging.error('Caught exception logging in. %s', e)
+		pass
 	else:
 		try:
 			r.json()
@@ -34,7 +35,6 @@ def getMe(token,tokentype):
 				'User-Agent': ua}
 	try:
 		r = requests.get(url, headers=headers)
-	# except requests.exceptions.RequestException as e:
 	except requests.exceptions.ConnectionError as e:
 		logging.error('Caught exception reading account info. %s', e)
 		return None, None
@@ -42,7 +42,7 @@ def getMe(token,tokentype):
 		try:
 			r.json()
 		except ValueError as e:
-			logging.error('JSON Data was shit. %s', e)
+			logging.error('Me json malformed.')
 		else:
 			return r.json(), r.status_code
 
@@ -52,13 +52,13 @@ def getMessages(token, tokentype):
 				'User-Agent': ua}
 	try:
 		r = requests.get(url, headers=headers)
-	except requests.exceptions.RequestException as e:
-		logging.info('Caught exception reading mail. %s', e)
+	except requests.exceptions.ConnectionError as e:
+		logging.error('Caught exception reading mail. %s', e)
 	else:
 		try:
 			r.json()
-		except ValueError as e:
-			logging.info('Shit data. %s', e)
+		except ValueError:
+			logging.error('Messages json malformed.')
 		else:
 			parseMessage(r.json())
 
@@ -66,7 +66,7 @@ def getMessages(token, tokentype):
 def parseMessage(data):
 	try:
 		lastmsg_json = data['data']['children'][0]['data']
-	except KeyError as e:
+	except KeyError:
 		logging.error("Message json malformed.")
 	else:
 		global lastmsg
@@ -85,8 +85,8 @@ def parseMessage(data):
 def parseMe(data, token, tokentype):
 	try:
 		data['has_mail']
-	except KeyError as e:
-		logging.error("me.json response malformed")
+	except KeyError:
+		logging.error("me.json response missing keys")
 	else:
 		if data['has_mail'] or data['has_mod_mail']:
 			getMessages(token, tokentype)
@@ -115,12 +115,12 @@ def sendPushalot(body, title):
 	try:
 		r = requests.post(url, headers=headers, data=body)
 	except requests.exceptions.RequestException as e:
-		logging.error("Shit went down. %s", e)
+		logging.error("Caught exception sending pushalot %s", e)
 	else:
 		try:
 			json = r.json()
-		except ValueError as e:
-			logging.error("Shit was bad. %s", e)
+		except ValueError:
+			logging.error("Pushalot json malformed")
 		else:
 			if r.status_code is not 200:
 				logging.error('Problem sending pushalot. %s: %s',
@@ -146,13 +146,13 @@ def sendPushover(body, title):
 	try:
 		r = requests.post(url, headers=headers, data=body)
 	except requests.exceptions.RequestException as e:
-		logging.error("Shit went down. %s", e)
+		logging.error("Caught exception sending pushover %s", e)
 	else:
 		if r.status_code is not 200:
 			try:
 				json = r.json()
 			except ValueError:
-				logging.error("Bad json.")
+				logging.error("Got bad json from pushover.")
 			else:
 				logging.error('Problem ending pushover. %s: %s',
 					r.status_code, json['errors'])
@@ -172,13 +172,13 @@ def sendPushbullet(body, title):
 	try:
 		r = requests.post(url, headers=headers, data=body, auth=(pbtoken,''))
 	except requests.exceptions.RequestException as e:
-		logging.error("Shit went down. %s", e)
+		logging.error("Caught exception sending pushbullet %s", e)
 	else:
 		if r.status_code is not 200:
 			try:
 				json = r.json()
 			except ValueError:
-				logging.error("Bad json.")
+				logging.error("Got bad json from pushbullet.")
 			else:
 				logging.error('Problem sending pushbullet. %s: %s',
 					r.status_code, json['status'])
