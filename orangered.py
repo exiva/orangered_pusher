@@ -69,24 +69,32 @@ def getMessages(token, tokentype):
 
 
 def parseMessage(data):
-	lastmsg_json = data['data']['children'][0]['data']
+	try:
+		lastmsg_json = data['data']['children'][0]['data']
+	except KeyError as e:
+		logging.error("Message json malformed.")
+	else:
+		global lastmsg
 
-	global lastmsg
+		unreads = len(data['data']['children'])
 
-	unreads = len(data['data']['children'])
+		if lastmsg != lastmsg_json['name']:
+			lastmsg = lastmsg_json['name']
+			logging.info('New Message')
+			if unreads > 1:
+				pushdispatcher("{0:d} {1:s}".format(unreads,msgbodym))
+				pass
+			else:
+				pushdispatcher(msgbody)
 
-	if lastmsg != lastmsg_json['name']:
-		lastmsg = lastmsg_json['name']
-		logging.info('New Message')
-		if unreads > 1:
-			pushdispatcher("{0:d} {1:s}".format(unreads,msgbodym))
-			pass
-		else:
-			pushdispatcher(msgbody)
-
-def parseMe(data, token, tokentype):	
-	if data['has_mail'] or data['has_mod_mail']:
-		getMessages(token, tokentype)
+def parseMe(data, token, tokentype):
+	try:
+		data['has_mail']
+	except KeyError as e:
+		logging.error("me.json response malformed")
+	else:
+		if data['has_mail'] or data['has_mod_mail']:
+			getMessages(token, tokentype)
 
 def pushdispatcher(msg):
 	title = "{0:s} ({1:s})".format(msgtitle, user)
