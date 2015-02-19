@@ -138,7 +138,6 @@ def sendPushalot(body, title):
 
 
 def sendPushover(body, title):
-	http = httplib2.Http()
 	url = 'https://api.pushover.net/1/messages.json'
 	headers = {'Content-type': 'application/x-www-form-urlencoded',
 	'User-Agent': ua}
@@ -151,23 +150,20 @@ def sendPushover(body, title):
 		'url_title': pushurltitle
 	}
 	try:
-		resp, cont = http.request(url, 'POST', headers=headers,
-		body=urllib.urlencode(body))
-	except Exception as e:
-		logging.error('Problem sending pushover. %s', e)
+		r = requests.post(url, headers=headers, data=body)
+	except requests.exceptions.RequestException as e:
+		logging.error("Shit went down. %s", e)
 	else:
-		if int(resp['status']) != 200:
+		if r.status_code is not 200:
 			try:
-				error_json = json.loads(cont)
-			except json.JSONDecodeError:
-				logging.error('Couldn\'t decode json')
+				json = r.json()
+			except ValueError:
+				logging.error("Bad json.")
 			else:
-				desc = error_json['errors']
-				logging.error('Problem sending pushover. %s: %s',
-				resp['status'], desc)
+				logging.error('Problem ending pushover. %s: %s',
+					r.status_code, json['errors'])
 		else:
 			logging.info('Pushover message sent')
-			pass
 
 def sendPushbullet(body, title):
 	http = httplib2.Http()
