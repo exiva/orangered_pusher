@@ -29,7 +29,7 @@ def loginReddit(user,password,clientid,secret):
 		try:
 			r.json()
 		except ValueError as e:
-			logging.info('Caught exception logging in. %s', e)
+			logging.error('Caught exception logging in. %s', e)
 		else:
 			return r.json()
 
@@ -41,13 +41,13 @@ def getMe(token,tokentype):
 		r = requests.get(url, headers=headers)
 	# except requests.exceptions.RequestException as e:
 	except requests.exceptions.ConnectionError as e:
-		logging.info('Caught exception reading account info. %s', e)
+		logging.error('Caught exception reading account info. %s', e)
 		return None, None
 	else:
 		try:
 			r.json()
 		except ValueError as e:
-			logging.info('JSON Data was shit. %s', e)
+			logging.error('JSON Data was shit. %s', e)
 		else:
 			return r.json(), r.status_code
 
@@ -245,6 +245,7 @@ if __name__ == '__main__':
 	pbtoken      = settings.get('pushbullet', 'token')
 
 	logging.basicConfig(filename=logfile, level=logging.INFO)
+	logging.getLogger("requests").setLevel(logging.WARNING)
 
 	print "Starting {}.\n...Trying to login with {}...".format(ua, user)
 	lastmsg = 'none'
