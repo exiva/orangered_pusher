@@ -1,12 +1,7 @@
 #!/usr/bin/env python
 
 import ConfigParser
-import httplib2
 import requests
-# import urllib2
-# import simplejson as json
-from threading import Timer
-import urllib
 import time
 import logging
 
