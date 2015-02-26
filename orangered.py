@@ -39,12 +39,13 @@ def getMe(token, tokentype):
         r = requests.get(url, headers=headers)
     except requests.exceptions.ConnectionError as e:
         logging.error('Caught exception reading account info. %s', e)
-        return None, None
+        return 'null', 0
     else:
         try:
             r.json()
         except ValueError as e:
             logging.error('Me json malformed.')
+            return 'null', 0
         else:
             return r.json(), r.status_code
 
@@ -211,10 +212,11 @@ def run(loginresponse):
         else:
             logging.error("Got no response, reddit is likely down.")
             time.sleep(poll)
+            loginresponse = loginReddit(user, passwd, clientid, secret)
 
 
 if __name__ == '__main__':
-    ua = 'python: orangered_pusher/0.2.0 by /u/exiva'
+    ua = 'python: orangered_pusher/0.2.1 by /u/exiva'
 
     settings = loadCfg('settings.cfg')
     user = settings.get('reddit', 'username')
