@@ -70,7 +70,7 @@ def getMessages(token, tokentype):
 def parseMessage(data):
     try:
         lastmsg_json = data['data']['children'][0]['data']
-    except KeyError:
+    except (KeyError, IndexError):
         logging.error("Message json malformed.")
     else:
         global lastmsg
