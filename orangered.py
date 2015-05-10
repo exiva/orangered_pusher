@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
-import ConfigParser
+try:
+    import ConfigParser
+except ImportError:
+    import configparser as ConfigParser
 import requests
 import time
 import logging
@@ -242,7 +245,7 @@ if __name__ == '__main__':
     logging.basicConfig(filename=logfile, level=logging.INFO)
     logging.getLogger("requests").setLevel(logging.WARNING)
 
-    print "Starting {}.\n...Trying to login with {}...".format(ua, user)
+    print("Starting {}.\n...Trying to login with {}...".format(ua, user))
     lastmsg = 'none'
 
     logindata = loginReddit(user, passwd, clientid, secret)
@@ -250,7 +253,7 @@ if __name__ == '__main__':
     try:
         logindata['access_token']
     except KeyError:
-        print "Couldn't login. Check credentials and try again."
+        print("Couldn't login. Check credentials and try again.")
     else:
-        print "Logged in. Checking for new mail..."
+        print("Logged in. Checking for new mail...")
         run(logindata)
